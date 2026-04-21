@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>My Recommendations</title>
+<meta name="description" content="A list of movies and songs worth recommending." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Mono:wght@300;400;500&family=Caveat:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<!-- Grain overlay + sun gradient -->
+<div class="grain" aria-hidden="true"></div>
+<div class="sun" aria-hidden="true"></div>
+
+<header class="masthead">
+  <div class="masthead__edition">
+    <span>Recommendations</span>
+    <span class="dot">•</span>
+    <span id="today"></span>
+  </div>
+
+  <h1 class="masthead__title">
+    <span class="masthead__title-line">Movies</span>
+    <span class="masthead__title-line italic">&amp; Songs</span>
+  </h1>
+
+  <p class="masthead__sub">
+    Things I like. Kept in one place.
+  </p>
+
+  <nav class="masthead__nav">
+    <a href="#search">search</a>
+    <span>·</span>
+    <a href="#movies">movies</a>
+    <span>·</span>
+    <a href="#songs">songs</a>
+    <span>·</span>
+    <button type="button" id="openAdd" class="link-button">+ add</button>
+  </nav>
+</header>
+
+<!-- ======================================================== SEARCH -->
+<section id="search" class="search">
+  <form class="search__form" onsubmit="return false;">
+    <div class="search__field">
+      <label for="q">Search the collection</label>
+      <input type="text" id="q" name="q"
+             placeholder="search titles, artists, years…"
+             autocomplete="off"/>
+    </div>
+    <div class="search__filters">
+      <label><input type="radio" name="kind" value="all" checked> everything</label>
+      <label><input type="radio" name="kind" value="movies"> movies</label>
+      <label><input type="radio" name="kind" value="songs"> songs</label>
+    </div>
+  </form>
+
+  <div id="searchResults" class="search__results" hidden>
+    <div class="search__meta">
+      <span id="searchCount">—</span>
+      <button type="button" id="clearSearch" class="link-button">clear</button>
+    </div>
+    <div id="searchGrid" class="grid"></div>
+  </div>
+</section>
+
+<!-- ======================================================== MOVIES -->
+<section id="movies" class="section">
+  <div class="section__head">
+    <div class="section__eyebrow">
+      <span class="num">01</span>
+      <span>Movies</span>
+    </div>
+    <h2 class="section__title">What I've been<br/><em>watching</em></h2>
+    <p class="section__note">
+      Films I'd recommend.
+    </p>
+  </div>
+
+  <div class="grid" id="moviesGrid">
+    {% for m in movies %}
+    <article class="card card--movie" data-id="{{ m.id }}">
+      <div class="card__poster">
+        {% if m.image_url %}
+          <img src="{{ m.image_url }}" alt="{{ m.title }}" loading="lazy"/>
+        {% else %}
+          <div class="card__placeholder"><span>{{ m.title[:1] }}</span></div>
+        {% endif %}
+        <button type="button" class="card__delete" title="remove" data-kind="movie" data-id="{{ m.id }}">×</button>
+      </div>
+      <div class="card__body">
+        <h3 class="card__title">{{ m.title }}</h3>
+        {% if m.year %}<span class="card__meta">{{ m.year }}</span>{% endif %}
+        {% if m.note %}<p class="card__note">{{ m.note }}</p>{% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  {% if not movies %}
+    <p class="empty">no movies yet — add one</p>
+  {% endif %}
+</section>
+
+<!-- ======================================================== SONGS -->
+<section id="songs" class="section section--alt">
+  <div class="section__head">
+    <div class="section__eyebrow">
+      <span class="num">02</span>
+      <span>Songs</span>
+    </div>
+    <h2 class="section__title">What I've been<br/><em>listening to</em></h2>
+    <p class="section__note">
+      Press play. Thirty seconds of preview.
+    </p>
+  </div>
+
+  <div class="grid grid--songs" id="songsGrid">
+    {% for s in songs %}
+    <article class="card card--song" data-id="{{ s.id }}">
+      <div class="card__cover">
+        {% if s.album_image %}
+          <img src="{{ s.album_image }}" alt="{{ s.title }}" loading="lazy"/>
+        {% else %}
+          <div class="card__placeholder card__placeholder--round"><span>♪</span></div>
+        {% endif %}
+
+        {% if s.preview_url %}
+          <button type="button" class="card__play" data-src="{{ s.preview_url }}" aria-label="play preview">
+            <span class="play-icon">▶</span>
+            <span class="pause-icon" hidden>❚❚</span>
+          </button>
+        {% endif %}
+
+        <button type="button" class="card__delete" title="remove" data-kind="song" data-id="{{ s.id }}">×</button>
+      </div>
+      <div class="card__body">
+        <h3 class="card__title">{{ s.title }}</h3>
+        <span class="card__meta">{{ s.artist }}</span>
+        {% if s.note %}<p class="card__note">{{ s.note }}</p>{% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  {% if not songs %}
+    <p class="empty">no songs yet — add one</p>
+  {% endif %}
+</section>
+
+<!-- ======================================================== FOOTER -->
+<footer class="footer">
+  <div class="footer__line"></div>
+  <p>
+    share the link — your list saves automatically
+  </p>
+</footer>
+
+
+<!-- ======================================================== MODAL -->
+<div class="modal" id="addModal" hidden>
+  <div class="modal__backdrop" data-close></div>
+  <div class="modal__panel" role="dialog" aria-label="Add to collection">
+    <button type="button" class="modal__close" data-close>×</button>
+
+    <div class="modal__tabs">
+      <button type="button" class="tab tab--active" data-tab="movie">+ Movie</button>
+      <button type="button" class="tab" data-tab="song">+ Song</button>
+    </div>
+
+    <!-- Movie form -->
+    <form id="movieForm" class="form" enctype="multipart/form-data">
+      <h3 class="form__title">Add a movie</h3>
+      <label>
+        <span>Title</span>
+        <input type="text" name="title" required placeholder="The Grand Budapest Hotel"/>
+      </label>
+      <div class="form__row">
+        <label>
+          <span>Year</span>
+          <input type="number" name="year" placeholder="2014" min="1888" max="2100"/>
+        </label>
+      </div>
+      <label>
+        <span>Poster image URL</span>
+        <input type="url" name="image_url" placeholder="https://…"/>
+      </label>
+      <label>
+        <span>…or upload an image</span>
+        <input type="file" name="image_file" accept="image/*"/>
+      </label>
+      <label>
+        <span>A line about it (optional)</span>
+        <textarea name="note" rows="2" placeholder="why you liked it"></textarea>
+      </label>
+      <button type="submit" class="form__submit">add to list</button>
+      <p class="form__error" data-error hidden></p>
+    </form>
+
+    <!-- Song form -->
+    <form id="songForm" class="form" enctype="multipart/form-data" hidden>
+      <h3 class="form__title">Add a song</h3>
+      <label>
+        <span>Title</span>
+        <input type="text" name="title" required placeholder="song title"/>
+      </label>
+      <label>
+        <span>Artist</span>
+        <input type="text" name="artist" required placeholder="artist name"/>
+      </label>
+      <label>
+        <span>Album cover URL</span>
+        <input type="url" name="album_image" placeholder="https://…"/>
+      </label>
+      <label>
+        <span>…or upload an image</span>
+        <input type="file" name="image_file" accept="image/*"/>
+      </label>
+      <label>
+        <span>Spotify / audio preview URL</span>
+        <input type="url" name="preview_url" placeholder="https://p.scdn.co/mp3-preview/…"/>
+        <small class="hint">paste a direct .mp3 preview link from Spotify's track data</small>
+      </label>
+      <label>
+        <span>A line about it (optional)</span>
+        <textarea name="note" rows="2" placeholder="why you liked it"></textarea>
+      </label>
+      <button type="submit" class="form__submit">add to list</button>
+      <p class="form__error" data-error hidden></p>
+    </form>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
